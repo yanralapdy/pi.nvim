@@ -1,0 +1,13 @@
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Lua
+*.luac
+luac.out
+
+# OS
+.DS_Store
+Thumbs.db
