@@ -1,17 +1,15 @@
 # pi.nvim
 
-Neovim plugin for the [Pi coding agent](https://github.com/earendil-works/pi-coding-agent). Select code, ask a question, watch the response stream into a floating window. Pi runs as a subprocess talking JSON-Lines over stdin/stdout.
+Neovim plugin for the [Pi coding agent](https://github.com/earendil-works/pi-coding-agent). Ask questions about your code from inside Neovim. Pi can run in a tmux pane, a Neovim terminal split, or a floating output window.
 
 ## Features
 
-- **RPC core** — spawns Pi in `--mode rpc`, manages the subprocess lifecycle, auto-restarts on crash
-- **Session detection** — when Pi is running in a tmux pane, `<leader>pa` forwards your prompt directly to the active session
-- **Fallback terminal** — without tmux, Pi opens in a Neovim terminal split
-- **Floating ask** — select code, press `<leader>pa`, type your question, get a streaming response
-- **Visual selection context** — file path, line range, and selected code are pre-filled into the prompt
-- **Lazy start** — Pi boots only when you trigger the first ask
-- **Persistent session** — one global RPC process per Neovim instance, stays alive between asks
-- **Clean shutdown** — subprocess killed on Neovim exit via `VimLeavePre`
+- **Ask from anywhere** — press `<leader>pa`, type a question, Pi gets the current file or visual selection as context
+- **Tmux forwarding** — when a Pi session is already running in a tmux pane, prompts are sent there instead of starting a new one
+- **Terminal fallback** — without tmux, Pi opens in a vertical Neovim terminal split
+- **Floating output** — when forwarding is disabled, responses stream into a floating window
+- **Prompt library** — pick from explain/fix/test prompts with `<leader>pp`
+- **Send file or selection** — one-key shortcuts for common actions (`<leader>pf`, `<leader>ps`)
 - **Health check** — `:checkhealth pi-nvim` verifies Pi installation and config
 - **Optional snacks.nvim integration** — enhanced input UI when snacks is available
 
@@ -33,7 +31,6 @@ Neovim plugin for the [Pi coding agent](https://github.com/earendil-works/pi-cod
 ```lua
 {
   "yanralapdy/pi.nvim",
-  lazy = false, -- health check needs plugin in rtp at startup
   opts = {},
   dependencies = { "folke/snacks.nvim" }, -- optional
 }
@@ -106,8 +103,8 @@ require("pi-nvim").setup({
 2. Press `<leader>pa`
 3. The floating input window opens — type your question and press `Enter` to submit
 4. The selected code (file path, line range, content) is automatically included in the prompt sent to Pi
-5. The output window opens and streams Pi's response
-6. Press `q` or `<Esc>` to close the output window
+5. Pi receives the prompt in a tmux pane, terminal split, or floating output window — whichever is available
+6. When using the floating output window, press `q` or `<Esc>` to close it
 
 ### Normal mode
 
@@ -144,57 +141,45 @@ If tmux is installed and a Pi session is running in a tmux pane, `<leader>pa` fo
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────┐
-│                    Neovim Process                     │
-│                                                      │
-│  ┌──────────┐   ┌──────────┐   ┌──────────────────┐ │
-│  │ init.lua │   │ config   │   │ health.lua        │ │
-│  │ setup()  │──▶│ defaults │   │ :checkhealth      │ │
-│  │ commands │   │ merge    │   │ verify pi install │ │
-│  └────┬─────┘   └──────────┘   └──────────────────┘ │
-│       │                                               │
-│       ▼                                               │
-│  ┌──────────────────────────────────────────────┐    │
-│  │              rpc.lua (the bus)                │    │
-│  │                                              │    │
-│  │  spawn()      → pi --mode rpc (child proc)   │    │
-│  │  send(cmd)    → stdin JSONL write             │    │
-│  │  on_event()   ← stdout JSONL read             │    │
-│  │  on_exit()    ← process exit/crash            │    │
-│  │  abort()      → SIGINT or abort command       │    │
-│  │  is_running() → check process state           │    │
-│  └───┬──────────────────────────────────────────┘    │
-│      │                                               │
-│      ▼                                               │
-│  ┌─────────┐                                        │
-│  │ float   │                                        │
-│  │ input   │                                        │
-│  │ output  │                                        │
-│  └─────────┘                                        │
-└──────────────────────────────────────────────────────┘
-                         │
-                         │ stdin/stdout (JSON-Lines)
-                         ▼
-┌──────────────────────────────────────────────────────┐
-│              pi --mode rpc (child process)            │
-│                                                      │
-│  stdin  ←  {"type":"prompt","message":"..."}         │
-│  stdout →  {"type":"message_update",...}             │
-│                                                      │
-│  Tools: read | edit | write | bash | grep | find     │
-└──────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                        Neovim Process                        │
+│                                                              │
+│  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐ │
+│  │ init.lua │   │ config   │   │ prompts  │   │ health   │ │
+│  │ keymaps  │──▶│ defaults │   │ library  │   │ check    │ │
+│  └────┬─────┘   └──────────┘   └────┬─────┘   └──────────┘ │
+│       │                             │                        │
+│       ▼                             ▼                        │
+│  ┌──────────────────────────────────────────────┐           │
+│  │            session.lua (the boundary)         │           │
+│  │                                               │           │
+│  │  find_pi_pane()     → detect pi in tmux       │           │
+│  │  forward_prompt()   → tmux send-keys          │           │
+│  │  open_pi_with_*()   → new tmux pane           │           │
+│  │  open_pi_in_nvim_terminal() → nvim :terminal  │           │
+│  └────┬─────────────────────────────────────────┘           │
+│       │                                                      │
+│       │ tmux / terminal        no session                    │
+│       │                      ┌────────────────────────────┐  │
+│       ▼                      │                            │  │
+│  ┌─────────────┐             │  rpc.lua (JSON-Lines bus)  │  │
+│  │ tmux pane   │             │  float.lua (input/output)  │  │
+│  └─────────────┘             └────────────────────────────┘  │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## How it works
 
-1. You press `<leader>pa` in visual mode
-2. The plugin captures the selection range and content
-3. If Pi is running in a tmux pane, the prompt is forwarded directly to that session and you're done
-4. Otherwise, a floating input window opens with a pre-filled template containing file path, line numbers, and selected code
-5. You type your question and submit
-6. The plugin spawns Pi (if not already running) and sends the prompt via JSON-Lines over stdin
-7. A floating output window opens and streams Pi's response chunk-by-chunk
-8. The RPC process stays alive after closing the output window, ready for the next ask
+1. You press `<leader>pa` in normal or visual mode
+2. The plugin captures the current file path or visual selection
+3. You type your question in the input window
+4. The plugin builds the final prompt with your question + file/selection context
+5. `session.lua` decides where to send it:
+   - If a Pi session is running in a tmux pane → forward there
+   - Else if tmux is available → open a new tmux pane with Pi and send the prompt
+   - Else → open Pi in a Neovim terminal split and send the prompt
+6. When forwarding is disabled (`session.auto_forward = false`), Pi runs over RPC and streams the response into a floating output window
 
 ## License
 
