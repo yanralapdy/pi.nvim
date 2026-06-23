@@ -5,7 +5,8 @@ Neovim plugin for the [Pi coding agent](https://github.com/earendil-works/pi-cod
 ## Features
 
 - **RPC core** — spawns Pi in `--mode rpc`, manages the subprocess lifecycle, auto-restarts on crash
-- **Session detection** — when Pi is running in a tmux pane, `<leader>pa` forwards your prompt directly to the active session instead of opening a floating window
+- **Session detection** — when Pi is running in a tmux pane, `<leader>pa` forwards your prompt directly to the active session
+- **Fallback terminal** — without tmux, Pi opens in a Neovim terminal split
 - **Floating ask** — select code, press `<leader>pa`, type your question, get a streaming response
 - **Visual selection context** — file path, line range, and selected code are pre-filled into the prompt
 - **Lazy start** — Pi boots only when you trigger the first ask
@@ -22,6 +23,7 @@ Neovim plugin for the [Pi coding agent](https://github.com/earendil-works/pi-cod
   ```bash
   npm i -g @earendil-works/pi-coding-agent
   ```
+- (Optional) tmux — enables session forwarding to existing Pi panes
 - (Optional) [snacks.nvim](https://github.com/folke/snacks.nvim) for the enhanced input window
 
 ## Installation
@@ -104,6 +106,10 @@ require("pi-nvim").setup({
 ### Normal mode
 
 Press `<leader>pa` without a selection to ask a general question. The input window opens empty.
+
+### Tmux integration (optional)
+
+If tmux is installed and a Pi session is running in a tmux pane, `<leader>pa` forwards your prompt directly to that session instead of opening a new terminal. Without tmux, Pi opens in a Neovim terminal split automatically.
 
 ### Commands
 
