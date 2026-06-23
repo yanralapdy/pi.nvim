@@ -17,6 +17,7 @@ Neovim plugin for the [Pi coding agent](https://github.com/earendil-works/pi-cod
 ## Requirements
 
 - Neovim 0.7+
+- Node.js >= 22.19.0 (required by pi-coding-agent)
 - [Pi](https://github.com/earendil-works/pi-coding-agent) installed and configured with at least one model
   ```bash
   npm i -g @earendil-works/pi-coding-agent
