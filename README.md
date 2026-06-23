@@ -130,14 +130,6 @@ If tmux is installed and a Pi session is running in a tmux pane, `<leader>pa` fo
 | `:PiAsk` | Trigger the ask flow (same as `<leader>pa` in normal mode) |
 | `:checkhealth pi-nvim` | Verify installation and configuration |
 
-### Output window keybindings
-
-| Key | Action |
-|-----|--------|
-| `q` | Close the output window |
-| `<Esc>` | Close the output window |
-| `<C-c>` | Abort Pi and close the output window |
-
 ## Architecture
 
 ```
