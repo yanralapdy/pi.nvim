@@ -90,10 +90,10 @@ require("pi-nvim").setup({
 | `float_input` | see above | Input window dimensions and border style |
 | `float_output` | see above | Output window dimensions and border style |
 | `session.auto_forward` | `true` | Forward prompts to existing pi tmux session when available |
-| `keymaps.ask` | `"<leader>pa"` | Keybinding to trigger the ask flow |
-| `keymaps.select` | `"<leader>ps"` | Keybinding for the action menu |
-| `keymaps.file` | `"<leader>pf"` | Keybinding to send file path to Pi |
-| `keymaps.prompt` | `"<leader>pp"` | Keybinding to pick a prompt |
+| `keymaps.ask` | `"<leader>pa"` | Keybinding to trigger the ask flow (visual mode) |
+| `keymaps.select` | `"<leader>ps"` | Keybinding for the action menu (visual mode) |
+| `keymaps.file` | `"<leader>pf"` | Keybinding to send file path to Pi (normal + visual mode) |
+| `keymaps.prompt` | `"<leader>pp"` | Keybinding to pick a prompt (visual mode) |
 
 ## Usage
 
@@ -106,10 +106,6 @@ require("pi-nvim").setup({
 5. Pi receives the prompt in a tmux pane, terminal split, or floating output window — whichever is available
 6. When using the floating output window, press `q` or `<Esc>` to close it
 
-### Normal mode
-
-Press `<leader>pa` without a selection to ask a general question. The input window opens empty.
-
 ### Tmux integration (optional)
 
 If tmux is installed and a Pi session is running in a tmux pane, `<leader>pa` forwards your prompt directly to that session instead of opening a new terminal. Without tmux, Pi opens in a Neovim terminal split automatically.
@@ -118,16 +114,16 @@ If tmux is installed and a Pi session is running in a tmux pane, `<leader>pa` fo
 
 | Key | Mode | Action |
 |-----|------|--------|
-| `<leader>pa` | n, v | Ask Pi — opens input, sends prompt with context |
-| `<leader>ps` | n, v | Action menu — send file, ask selection, or pick a prompt |
+| `<leader>pa` | v | Ask Pi — opens input, sends prompt with context |
+| `<leader>ps` | v | Action menu — send file, ask selection, or pick a prompt |
 | `<leader>pf` | n, v | Send current file path to existing Pi session |
-| `<leader>pp` | n, v | Pick a prompt (explain, fix, test, etc.) and send with context |
+| `<leader>pp` | v | Pick a prompt (explain, fix, test, etc.) and send with context |
 
 ### Commands
 
 | Command | Action |
 |---------|--------|
-| `:PiAsk` | Trigger the ask flow (same as `<leader>pa` in normal mode) |
+| `:PiAsk` | Trigger the ask flow from normal mode (asks about current buffer or no selection) |
 | `:checkhealth pi-nvim` | Verify installation and configuration |
 
 ## Architecture
@@ -163,8 +159,8 @@ If tmux is installed and a Pi session is running in a tmux pane, `<leader>pa` fo
 
 ## How it works
 
-1. You press `<leader>pa` in normal or visual mode
-2. The plugin captures the current file path or visual selection
+1. You press `<leader>pa` in visual mode
+2. The plugin captures the visual selection
 3. You type your question in the input window
 4. The plugin builds the final prompt with your question + file/selection context
 5. `session.lua` decides where to send it:

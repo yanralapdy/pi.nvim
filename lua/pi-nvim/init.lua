@@ -70,7 +70,7 @@ function M.setup(user_opts)
   float.setup_visual_autocmds()
 
   -- Keybinding: <leader>pa — ask a question (input dialog)
-  vim.keymap.set({ "v", "n" }, config.keymaps.ask, function()
+  vim.keymap.set("v", config.keymaps.ask, function()
     ask()
   end, { desc = "Ask Pi" })
 
@@ -93,7 +93,7 @@ function M.setup(user_opts)
 
   -- <leader>ks — ask about selected code (snacks input)
   -- <leader>ps — unified action menu (send file, ask selection, pick prompt)
-  vim.keymap.set({ "v", "n" }, "<leader>ps", function()
+  vim.keymap.set("v", "<leader>ps", function()
     local sel = float.get_selection()
     local prompts = require("pi-nvim.prompts").get_all()
     local session = require("pi-nvim.session")
@@ -157,7 +157,7 @@ function M.setup(user_opts)
   end, { desc = "Pi: select action" })
 
   -- <leader>kf — pick a prompt (explain/fix/test/etc) and send with context
-  vim.keymap.set({ "v", "n" }, "<leader>pp", function()
+  vim.keymap.set("v", "<leader>pp", function()
     local prompts = require("pi-nvim.prompts").get_all()
     local sel = float.get_selection()
     local items = {}
