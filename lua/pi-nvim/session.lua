@@ -246,6 +246,43 @@ function M.open_pi_in_nvim_terminal(text)
   return true
 end
 
+--- Testable hooks for reading buffer options.
+function M._buf_buftype(buf)
+  return vim.bo[buf].buftype
+end
+
+function M._buf_channel(buf)
+  return vim.bo[buf].channel
+end
+
+--- Find an existing pi process running in a Neovim terminal buffer.
+-- @return number|nil chan, number|nil buf
+function M.find_pi_terminal()
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if M._buf_buftype(buf) == "terminal" then
+      local chan = M._buf_channel(buf)
+      if chan and chan > 0 then
+        local info = vim.api.nvim_get_chan_info(chan)
+        local cmd = info and info.argv and info.argv[1]
+        if cmd and vim.fn.fnamemodify(cmd, ":t") == "pi" then
+          return chan, buf
+        end
+      end
+    end
+  end
+  return nil, nil
+end
+
+--- Send text to an existing nvim terminal pi session.
+-- @return boolean success
+function M.forward_to_terminal(text, chan)
+  if not chan or chan <= 0 then
+    return false
+  end
+  pcall(vim.api.nvim_chan_send, chan, text .. "\n")
+  return true
+end
+
 --- Try to forward text to an existing pi pane, or open pi in a terminal.
 -- @return boolean forwarded
 function M.try_forward(text)
@@ -258,6 +295,10 @@ function M.try_forward(text)
       return M.forward_prompt(text, pane_id)
     end
     return M.open_pi_with_prompt(text)
+  end
+  local chan = M.find_pi_terminal()
+  if chan then
+    return M.forward_to_terminal(text, chan)
   end
   return M.open_pi_in_nvim_terminal(text)
 end

@@ -196,4 +196,80 @@ describe("pi-nvim.session", function()
     end
     assert.is_true(session.try_forward("hello from nvim"))
   end)
+
+  it("find_pi_terminal returns nil when no terminal buffers", function()
+    local orig_list_bufs = vim.api.nvim_list_bufs
+    vim.api.nvim_list_bufs = function()
+      return {}
+    end
+    assert.is_nil(session.find_pi_terminal())
+    vim.api.nvim_list_bufs = orig_list_bufs
+  end)
+
+  it("find_pi_terminal returns channel for terminal running pi", function()
+    local buf = vim.api.nvim_create_buf(false, true)
+    local orig_list_bufs = vim.api.nvim_list_bufs
+    local orig_get_chan_info = vim.api.nvim_get_chan_info
+    local orig_buf_channel = session._buf_channel
+    local orig_buf_buftype = session._buf_buftype
+    vim.api.nvim_list_bufs = function()
+      return { buf }
+    end
+    session._buf_buftype = function()
+      return "terminal"
+    end
+    session._buf_channel = function()
+      return 42
+    end
+    vim.api.nvim_get_chan_info = function()
+      return { argv = { "/usr/local/bin/pi" } }
+    end
+    local chan = session.find_pi_terminal()
+    assert.is.equal(42, chan)
+    vim.api.nvim_list_bufs = orig_list_bufs
+    vim.api.nvim_get_chan_info = orig_get_chan_info
+    session._buf_channel = orig_buf_channel
+    session._buf_buftype = orig_buf_buftype
+  end)
+
+  it("forward_to_terminal sends text with newline", function()
+    local sent = nil
+    local orig_chan_send = vim.api.nvim_chan_send
+    vim.api.nvim_chan_send = function(chan, text)
+      sent = { chan = chan, text = text }
+    end
+    assert.is_true(session.forward_to_terminal("hello", 42))
+    assert.is.equal(42, sent.chan)
+    assert.is.equal("hello\n", sent.text)
+    vim.api.nvim_chan_send = orig_chan_send
+  end)
+
+  it("try_forward reuses existing nvim terminal pi", function()
+    vim.fn.executable = function()
+      return 0
+    end
+    vim.env.TMUX = nil
+    local buf = vim.api.nvim_create_buf(false, true)
+    local orig_list_bufs = vim.api.nvim_list_bufs
+    local orig_get_chan_info = vim.api.nvim_get_chan_info
+    local orig_buf_channel = session._buf_channel
+    local orig_buf_buftype = session._buf_buftype
+    vim.api.nvim_list_bufs = function()
+      return { buf }
+    end
+    session._buf_buftype = function()
+      return "terminal"
+    end
+    session._buf_channel = function()
+      return 42
+    end
+    vim.api.nvim_get_chan_info = function()
+      return { argv = { "pi" } }
+    end
+    assert.is_true(session.try_forward("reuse me"))
+    vim.api.nvim_list_bufs = orig_list_bufs
+    vim.api.nvim_get_chan_info = orig_get_chan_info
+    session._buf_channel = orig_buf_channel
+    session._buf_buftype = orig_buf_buftype
+  end)
 end)
