@@ -214,10 +214,15 @@ function M.open_pi_in_nvim_terminal(text)
   vim.api.nvim_win_set_width(win, math.floor(vim.o.columns / 2))
 
   -- Start terminal with pi
-  local chan = vim.fn.jobstart({ "pi" }, {
-    term = true,
-    on_exit = function()
-      -- Close the split when pi exits
+  vim.cmd("terminal pi")
+  local buf = vim.api.nvim_get_current_buf()
+  local chan = vim.bo.channel
+
+  -- Close the split when pi exits
+  vim.api.nvim_create_autocmd("TermClose", {
+    buffer = buf,
+    once = true,
+    callback = function()
       vim.schedule(function()
         if vim.api.nvim_win_is_valid(win) then
           vim.api.nvim_win_close(win, true)
