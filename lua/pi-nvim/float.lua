@@ -1,70 +1,106 @@
 local M = {}
 
+--- Cached visual range (captured by ModeChanged autocmd)
+local _visual_range = nil
+
+--- Setup autocmds to capture visual selection
+function M.setup_visual_autocmds()
+  local group = vim.api.nvim_create_augroup("PiNvimVisual", { clear = true })
+
+  -- Capture marks when exiting visual mode
+  vim.api.nvim_create_autocmd("ModeChanged", {
+    group = group,
+    pattern = "[vVxX]:n",
+    callback = function()
+      local srow = vim.fn.getpos("'<")[2]
+      local erow = vim.fn.getpos("'>")[2]
+      if srow > 0 and erow > 0 then
+        _visual_range = { srow = srow, erow = erow }
+      end
+    end,
+  })
+
+  -- Clear cache when entering visual mode
+  vim.api.nvim_create_autocmd("ModeChanged", {
+    group = group,
+    pattern = "n:[vVxX]",
+    callback = function()
+      _visual_range = nil
+    end,
+  })
+end
+
 --- Get the current visual selection range and content
 --- @return table|nil { path, start_row, end_row, code, filetype } or nil if no selection
 function M.get_selection()
-  -- Check if selection marks are valid (works after leaving visual mode)
-  local start_pos = vim.fn.getpos("'<")
-  local end_pos = vim.fn.getpos("'>")
+  local mode = vim.fn.mode()
+  local srow, erow
 
-  -- getpos returns [bufnum, lnum, col, off] — lnum=0 means no valid mark
-  if start_pos[2] == 0 or end_pos[2] == 0 then
+  -- If in visual mode, use live positions (marks aren't set yet)
+  if mode:match("[vVxX]") then
+    srow = vim.fn.getpos("v")[2]
+    erow = vim.fn.getpos(".")[2]
+  else
+    -- After visual mode, check marks first, then cache
+    local mark_s = vim.fn.getpos("'<")[2]
+    local mark_e = vim.fn.getpos("'>")[2]
+    if mark_s > 0 and mark_e > 0 then
+      srow, erow = mark_s, mark_e
+    elseif _visual_range then
+      srow, erow = _visual_range.srow, _visual_range.erow
+    else
+      return nil
+    end
+  end
+
+  if not srow or not erow or srow == 0 or erow == 0 then
     return nil
   end
 
-  local start_row = start_pos[2]
-  local end_row = end_pos[2]
-  local start_col = start_pos[3]
-  local end_col = end_pos[3]
-
-  -- If no actual selection (same position), return nil
-  if start_row == end_row and start_col == end_col then
-    return nil
+  if srow > erow then
+    srow, erow = erow, srow
   end
 
-  -- Get buffer lines
-  local lines = vim.api.nvim_buf_get_lines(0, start_row - 1, end_row, false)
+  local buf = vim.api.nvim_get_current_buf()
+  local lines = vim.api.nvim_buf_get_lines(buf, srow - 1, erow, false)
   if #lines == 0 then
     return nil
   end
 
-  -- Adjust first and last lines for column selection
-  if #lines == 1 then
-    lines[1] = lines[1]:sub(start_col, end_col)
-  else
-    lines[1] = lines[1]:sub(start_col)
-    lines[#lines] = lines[#lines]:sub(1, end_col)
-  end
-
-  local code = table.concat(lines, "\n")
-  local path = vim.fn.expand("%")
-  local filetype = vim.bo.filetype
-
   return {
-    path = path,
-    start_row = start_row,
-    end_row = end_row,
-    code = code,
-    filetype = filetype,
+    path = vim.fn.expand("%"),
+    start_row = srow,
+    end_row = erow,
+    code = table.concat(lines, "\n"),
+    filetype = vim.bo[buf].filetype,
   }
 end
 
---- Build a context template for the input window
---- @param context table|nil Selection context from get_selection()
+--- Build a prompt with optional selection context.
+--- @param sel table|nil Selection from get_selection()
+--- @param text string The user's question or prompt template
 --- @return string
-function M.build_template(context)
-  if not context then
-    return "# Ask Pi:\n"
+function M.build_prompt(sel, text)
+  if not sel then
+    return text
   end
-
   return string.format(
-    "# %s:%d-%d\n```%s\n%s\n```\n\n# Your question:\n",
-    context.path,
-    context.start_row,
-    context.end_row,
-    context.filetype,
-    context.code
+    "%s:%d-%d\n```%s\n%s\n```\n\n%s",
+    sel.path,
+    sel.start_row,
+    sel.end_row,
+    sel.filetype,
+    sel.code,
+    text
   )
+end
+
+--- Build the initial value for the input window.
+--- @param sel table|nil Selection from get_selection()
+--- @return string
+function M.build_template(sel)
+  -- ponytail: empty default; pre-filling the full context block duplicates build_prompt's work.
+  return ""
 end
 
 --- Open a floating input window

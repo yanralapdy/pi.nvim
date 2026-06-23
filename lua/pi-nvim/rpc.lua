@@ -4,9 +4,8 @@ M.state = {
   job_id = nil,
   is_running = false,
   is_streaming = false,
-  model = nil,
-  buffer = {},  -- table-based buffer for efficient concatenation
-  buffer_str = "",  -- remaining partial line
+  buffer = {},
+  buffer_str = "",
   listeners = {},
 }
 
@@ -35,14 +34,20 @@ function M.spawn(cfg)
 
   -- Validate pi is executable (R-01: security check)
   if vim.fn.executable(cfg.pi_cmd) ~= 1 then
-    return nil, "pi not found at '" .. cfg.pi_cmd .. "'. Install: npm i -g @earendil-works/pi-coding-agent"
+    return nil,
+      "pi not found at '" .. cfg.pi_cmd .. "'. Install: npm i -g @earendil-works/pi-coding-agent"
   end
 
   -- R-01: Use array form to prevent shell injection
   local cmd = vim.list_extend({ cfg.pi_cmd }, cfg.pi_args)
 
+  -- Ensure correct node version is first in PATH (derive from pi's location)
+  local pi_dir = vim.fn.fnamemodify(vim.fn.exepath(cfg.pi_cmd), ":h")
+  local path = pi_dir .. ":" .. (vim.env.PATH or "")
+
   M.state.job_id = vim.fn.jobstart(cmd, {
     pty = true,
+    env = { PATH = path, HOME = vim.env.HOME },
     on_stdout = function(_, data)
       if data then
         M._on_data(data)
@@ -107,14 +112,8 @@ function M._on_data(chunks)
     -- Find line terminator (\n or \r)
     local newline = buf:find("\n", 1, true)
     local cr = buf:find("\r", 1, true)
-    local split_at = nil
-    if newline and cr then
-      split_at = math.min(newline, cr)
-    elseif newline then
-      split_at = newline
-    elseif cr then
-      split_at = cr
-    else
+    local split_at = newline and cr and math.min(newline, cr) or newline or cr
+    if not split_at then
       -- No complete line found, save remainder
       M.state.buffer_str = buf
       break
@@ -145,23 +144,11 @@ function M._dispatch(event)
     M.state.is_streaming = true
   elseif event.type == "agent_end" then
     M.state.is_streaming = false
-    if event.messages then
-      M.state.messages = event.messages
-    end
   end
 
-  -- Notify typed listeners (direct call — on_stdout runs in main loop)
   local listeners = M.state.listeners[event.type]
   if listeners then
     for _, cb in ipairs(listeners) do
-      cb(event)
-    end
-  end
-
-  -- Notify wildcard listeners
-  local all = M.state.listeners["*"]
-  if all then
-    for _, cb in ipairs(all) do
       cb(event)
     end
   end
@@ -192,8 +179,7 @@ function M.send(cmd)
     return false, "RPC process not running"
   end
   local json = vim.json.encode(cmd)
-  -- In pty mode, use \r as line terminator (not \n)
-  local ok = pcall(vim.fn.chansend, M.state.job_id, json .. "\r")
+  local ok = pcall(vim.fn.chansend, M.state.job_id, json .. "\n")
   return ok
 end
 

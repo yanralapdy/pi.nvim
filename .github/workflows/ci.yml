@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install luacheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4 luarocks
+          sudo luarocks install luacheck
+      
+      - name: Run luacheck
+        run: luacheck lua/
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install stylua
+        run: |
+          curl -sL https://github.com/JohnnyMorganz/StyLua/releases/latest/download/stylua-linux-x86_64.zip -o stylua.zip
+          unzip stylua.zip
+          chmod +x stylua
+          sudo mv stylua /usr/local/bin/
+      
+      - name: Check formatting
+        run: stylua --check lua/
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+      
+      - name: Install plenary.nvim
+        run: |
+          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim.git /tmp/plenary.nvim
+      
+      - name: Run unit tests
+        run: |
+          nvim --headless -u NONE \
+            -c "set rtp+=/tmp/plenary.nvim" \
+            -c "set rtp+=." \
+            -c "PlenaryBustedFile tests/config_spec.lua" \
+            -c "PlenaryBustedFile tests/rpc_spec.lua" \
+            -c "PlenaryBustedFile tests/float_spec.lua"
