@@ -128,33 +128,37 @@ If tmux is installed and a Pi session is running in a tmux pane, `<leader>pa` fo
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Neovim Process                        │
-│                                                              │
-│  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐ │
-│  │ init.lua │   │ config   │   │ prompts  │   │ health   │ │
-│  │ keymaps  │──▶│ defaults │   │ library  │   │ check    │ │
-│  └────┬─────┘   └──────────┘   └────┬─────┘   └──────────┘ │
-│       │                             │                        │
-│       ▼                             ▼                        │
-│  ┌──────────────────────────────────────────────┐           │
-│  │            session.lua (the boundary)         │           │
-│  │                                               │           │
-│  │  find_pi_pane()     → detect pi in tmux       │           │
-│  │  forward_prompt()   → tmux send-keys          │           │
-│  │  open_pi_with_*()   → new tmux pane           │           │
-│  │  open_pi_in_nvim_terminal() → nvim :terminal  │           │
-│  └────┬─────────────────────────────────────────┘           │
-│       │                                                      │
-│       │ tmux / terminal        no session                    │
-│       │                      ┌────────────────────────────┐  │
-│       ▼                      │                            │  │
-│  ┌─────────────┐             │  rpc.lua (JSON-Lines bus)  │  │
-│  │ tmux pane   │             │  float.lua (input/output)  │  │
-│  └─────────────┘             └────────────────────────────┘  │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph nvim["Neovim Process"]
+        init["init.lua<br/>keymaps"]
+        config["config.lua<br/>defaults"]
+        prompts["prompts.lua<br/>library"]
+        health["health.lua<br/>:checkhealth"]
+        session["session.lua<br/>dispatch boundary"]
+        rpc["rpc.lua<br/>JSON-Lines bus"]
+        float["float.lua<br/>input/output"]
+    end
+
+    tmux["tmux pane"]
+    terminal["Neovim :terminal split"]
+    pi["pi CLI"]
+
+    init --> config
+    init --> prompts
+    init --> session
+    prompts --> session
+    health -.-> config
+
+    session -->|find existing pane| tmux
+    session -->|forward prompt| tmux
+    session -->|open new pane| tmux
+    session -->|no tmux| terminal
+    session -->|auto_forward disabled| rpc
+    rpc --> float
+    tmux --> pi
+    terminal --> pi
+    rpc --> pi
 ```
 
 ## How it works
