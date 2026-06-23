@@ -4,6 +4,9 @@ M.defaults = {
   pi_cmd = "pi",
   pi_args = { "--mode", "rpc", "--no-session" },
   snacks = true,
+  session = {
+    auto_forward = true,
+  },
   float_input = {
     width = 80,
     height = 20,

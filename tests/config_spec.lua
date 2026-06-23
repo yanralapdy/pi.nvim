@@ -1,0 +1,30 @@
+local config = require("pi-nvim.config")
+
+describe("pi-nvim.config", function()
+  it("has correct defaults", function()
+    assert.is.equal("pi", config.defaults.pi_cmd)
+    assert.is.same({ "--mode", "rpc", "--no-session" }, config.defaults.pi_args)
+    assert.is.equal(true, config.defaults.snacks)
+    assert.is.equal("<leader>pa", config.defaults.keymaps.ask)
+  end)
+
+  it("merges user opts with defaults", function()
+    local merged = config.merge({ pi_cmd = "/usr/local/bin/pi" })
+    assert.is.equal("/usr/local/bin/pi", merged.pi_cmd)
+    assert.is.same({ "--mode", "rpc", "--no-session" }, merged.pi_args)
+  end)
+
+  it("allows overriding keymaps", function()
+    local merged = config.merge({ keymaps = { ask = "<leader>pp" } })
+    assert.is.equal("<leader>pp", merged.keymaps.ask)
+  end)
+
+  it("handles nil opts gracefully", function()
+    local merged = config.merge(nil)
+    assert.is.same(config.defaults, merged)
+  end)
+
+  it("has session.auto_forward defaulting to true", function()
+    assert.is_true(config.defaults.session.auto_forward)
+  end)
+end)

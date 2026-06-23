@@ -5,6 +5,8 @@ Neovim plugin for the [Pi coding agent](https://github.com/earendil-works/pi-cod
 ## Features
 
 - **RPC core** — spawns Pi in `--mode rpc`, manages the subprocess lifecycle, auto-restarts on crash
+- **Session detection** — when Pi is running in a tmux pane, `<leader>pa` forwards your prompt directly to the active session
+- **Fallback terminal** — without tmux, Pi opens in a Neovim terminal split
 - **Floating ask** — select code, press `<leader>pa`, type your question, get a streaming response
 - **Visual selection context** — file path, line range, and selected code are pre-filled into the prompt
 - **Lazy start** — Pi boots only when you trigger the first ask
@@ -16,10 +18,12 @@ Neovim plugin for the [Pi coding agent](https://github.com/earendil-works/pi-cod
 ## Requirements
 
 - Neovim 0.7+
+- Node.js >= 22.19.0 (required by pi-coding-agent)
 - [Pi](https://github.com/earendil-works/pi-coding-agent) installed and configured with at least one model
   ```bash
   npm i -g @earendil-works/pi-coding-agent
   ```
+- (Optional) tmux — enables session forwarding to existing Pi panes
 - (Optional) [snacks.nvim](https://github.com/folke/snacks.nvim) for the enhanced input window
 
 ## Installation
@@ -29,9 +33,8 @@ Neovim plugin for the [Pi coding agent](https://github.com/earendil-works/pi-cod
 ```lua
 {
   "yanralapdy/pi.nvim",
+  lazy = false, -- health check needs plugin in rtp at startup
   opts = {},
-  -- Optional: only load when you call setup
-  lazy = true,
   dependencies = { "folke/snacks.nvim" }, -- optional
 }
 ```
@@ -86,6 +89,7 @@ require("pi-nvim").setup({
 | `snacks` | `true` | Use snacks.nvim for input if available |
 | `float_input` | see above | Input window dimensions and border style |
 | `float_output` | see above | Output window dimensions and border style |
+| `session.auto_forward` | `true` | Forward prompts to existing pi tmux session when available |
 | `keymaps.ask` | `"<leader>pa"` | Keybinding to trigger the ask flow |
 
 ## Usage
@@ -94,24 +98,18 @@ require("pi-nvim").setup({
 
 1. Select code with `V` or `v`
 2. Press `<leader>pa`
-3. The floating input window opens with the selection pre-filled:
-   ```
-   # init.lua:10-25
-   ```lua
-   function M.setup(user_opts)
-     ...
-   end
-   ```
-
-   # Your question:
-   ```
-4. Type your question, press `Enter` to submit
+3. The floating input window opens — type your question and press `Enter` to submit
+4. The selected code (file path, line range, content) is automatically included in the prompt sent to Pi
 5. The output window opens and streams Pi's response
 6. Press `q` or `<Esc>` to close the output window
 
 ### Normal mode
 
 Press `<leader>pa` without a selection to ask a general question. The input window opens empty.
+
+### Tmux integration (optional)
+
+If tmux is installed and a Pi session is running in a tmux pane, `<leader>pa` forwards your prompt directly to that session instead of opening a new terminal. Without tmux, Pi opens in a Neovim terminal split automatically.
 
 ### Commands
 
@@ -176,11 +174,12 @@ Press `<leader>pa` without a selection to ask a general question. The input wind
 
 1. You press `<leader>pa` in visual mode
 2. The plugin captures the selection range and content
-3. A floating input window opens with a pre-filled template containing file path, line numbers, and selected code
-4. You type your question and submit
-5. The plugin spawns Pi (if not already running) and sends the prompt via JSON-Lines over stdin
-6. A floating output window opens and streams Pi's response chunk-by-chunk
-7. The RPC process stays alive after closing the output window, ready for the next ask
+3. If Pi is running in a tmux pane, the prompt is forwarded directly to that session and you're done
+4. Otherwise, a floating input window opens with a pre-filled template containing file path, line numbers, and selected code
+5. You type your question and submit
+6. The plugin spawns Pi (if not already running) and sends the prompt via JSON-Lines over stdin
+7. A floating output window opens and streams Pi's response chunk-by-chunk
+8. The RPC process stays alive after closing the output window, ready for the next ask
 
 ## License
 
