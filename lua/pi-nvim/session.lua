@@ -214,7 +214,7 @@ function M.open_pi_in_nvim_terminal(text)
   vim.api.nvim_win_set_width(win, math.floor(vim.o.columns / 2))
 
   -- Start terminal with pi
-  vim.fn.jobstart({ "pi" }, {
+  local chan = vim.fn.jobstart({ "pi" }, {
     term = true,
     on_exit = function()
       -- Close the split when pi exits
@@ -228,8 +228,7 @@ function M.open_pi_in_nvim_terminal(text)
 
   -- Wait for pi to start, then send the prompt
   vim.defer_fn(function()
-    -- Send the prompt + Enter via terminal keycodes
-    vim.api.nvim_chan_send(vim.bo.channel, text .. "\n")
+    pcall(vim.api.nvim_chan_send, chan, text .. "\n")
   end, 1000)
 
   -- Return to previous window
