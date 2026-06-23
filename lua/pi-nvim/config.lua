@@ -2,23 +2,17 @@ local M = {}
 
 M.defaults = {
   pi_cmd = "pi",
-  pi_args = { "--mode", "rpc", "--no-session" },
   snacks = true,
-  session = {
-    auto_forward = true,
-  },
   float_input = {
     width = 80,
     height = 20,
     border = "rounded",
   },
-  float_output = {
-    width = 80,
-    height = 30,
-    border = "rounded",
-  },
   keymaps = {
     ask = "<leader>pa",
+    select = "<leader>ps",
+    file = "<leader>pf",
+    prompt = "<leader>pp",
   },
 }
 

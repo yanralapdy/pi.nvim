@@ -190,7 +190,8 @@ function M.open_pi_with_prompt(text)
   end
 
   -- No free pane — create a new one
-  vim.fn.system({ "tmux", "split-window", "-h", "-l", "50%", "pi" })
+  local pi_cmd = require("pi-nvim.config").defaults.pi_cmd
+  vim.fn.system({ "tmux", "split-window", "-h", "-l", "50%", pi_cmd })
   if vim.v.shell_error ~= 0 then
     return false
   end
@@ -214,7 +215,8 @@ function M.open_pi_in_nvim_terminal(text)
   vim.api.nvim_win_set_width(win, math.floor(vim.o.columns / 2))
 
   -- Start terminal with pi
-  vim.cmd("terminal pi")
+  local pi_cmd = require("pi-nvim.config").defaults.pi_cmd
+  vim.cmd("terminal " .. pi_cmd)
   local buf = vim.api.nvim_get_current_buf()
   local chan = vim.bo.channel
 

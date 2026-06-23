@@ -1,13 +1,12 @@
 # pi.nvim
 
-Neovim plugin for the [Pi coding agent](https://github.com/earendil-works/pi-coding-agent). Ask questions about your code from inside Neovim. Pi can run in a tmux pane, a Neovim terminal split, or a floating output window.
+Neovim plugin for the [Pi coding agent](https://github.com/earendil-works/pi-coding-agent). Ask questions about your code from inside Neovim. Pi runs in a tmux pane or a Neovim terminal split.
 
 ## Features
 
 - **Ask from anywhere** — press `<leader>pa`, type a question, Pi gets the current file or visual selection as context
 - **Tmux forwarding** — when a Pi session is already running in a tmux pane, prompts are sent there instead of starting a new one
 - **Terminal fallback** — without tmux, Pi opens in a vertical Neovim terminal split
-- **Floating output** — when forwarding is disabled, responses stream into a floating window
 - **Prompt library** — pick from explain/fix/test prompts with `<leader>pp`
 - **Send file or selection** — one-key shortcuts for common actions (`<leader>pf`, `<leader>ps`)
 - **Health check** — `:checkhealth pi-nvim` verifies Pi installation and config
@@ -61,16 +60,10 @@ Default options:
 ```lua
 require("pi-nvim").setup({
   pi_cmd = "pi",
-  pi_args = { "--mode", "rpc", "--no-session" },
   snacks = true,
   float_input = {
     width = 80,
     height = 20,
-    border = "rounded",
-  },
-  float_output = {
-    width = 80,
-    height = 30,
     border = "rounded",
   },
   keymaps = {
@@ -85,11 +78,8 @@ require("pi-nvim").setup({
 | Option | Default | Description |
 |--------|---------|-------------|
 | `pi_cmd` | `"pi"` | Path to the Pi CLI binary |
-| `pi_args` | `{ "--mode", "rpc", "--no-session" }` | Arguments passed to Pi |
 | `snacks` | `true` | Use snacks.nvim for input if available |
 | `float_input` | see above | Input window dimensions and border style |
-| `float_output` | see above | Output window dimensions and border style |
-| `session.auto_forward` | `true` | Forward prompts to existing pi tmux session when available |
 | `keymaps.ask` | `"<leader>pa"` | Keybinding to trigger the ask flow (visual mode) |
 | `keymaps.select` | `"<leader>ps"` | Keybinding for the action menu (visual mode) |
 | `keymaps.file` | `"<leader>pf"` | Keybinding to send file path to Pi (normal + visual mode) |
@@ -103,8 +93,7 @@ require("pi-nvim").setup({
 2. Press `<leader>pa`
 3. The floating input window opens — type your question and press `Enter` to submit
 4. The selected code (file path, line range, content) is automatically included in the prompt sent to Pi
-5. Pi receives the prompt in a tmux pane, terminal split, or floating output window — whichever is available
-6. When using the floating output window, press `q` or `<Esc>` to close it
+5. Pi receives the prompt in a tmux pane or terminal split
 
 ### Tmux integration (optional)
 
@@ -136,8 +125,7 @@ flowchart TB
         prompts["prompts.lua<br/>library"]
         health["health.lua<br/>:checkhealth"]
         session["session.lua<br/>dispatch boundary"]
-        rpc["rpc.lua<br/>JSON-Lines bus"]
-        float["float.lua<br/>input/output"]
+        float["float.lua<br/>input window"]
     end
 
     tmux["tmux pane"]
@@ -148,17 +136,16 @@ flowchart TB
     init --> prompts
     init --> session
     prompts --> session
+    init --> float
+    float --> session
     health -.-> config
 
     session -->|find existing pane| tmux
     session -->|forward prompt| tmux
     session -->|open new pane| tmux
     session -->|no tmux| terminal
-    session -->|auto_forward disabled| rpc
-    rpc --> float
     tmux --> pi
     terminal --> pi
-    rpc --> pi
 ```
 
 ## How it works
@@ -171,7 +158,6 @@ flowchart TB
    - If a Pi session is running in a tmux pane → forward there
    - Else if tmux is available → open a new tmux pane with Pi and send the prompt
    - Else → open Pi in a Neovim terminal split and send the prompt
-6. When forwarding is disabled (`session.auto_forward = false`), Pi runs over RPC and streams the response into a floating output window
 
 ## License
 

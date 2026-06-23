@@ -26,6 +26,3 @@ files["lua/pi-nvim/float.lua"] = {
   ignore = { "122" },  -- setting read-only field (vim.bo metatable)
 }
 
-files["lua/pi-nvim/chat.lua"] = {
-  ignore = { "122" },  -- setting read-only field (vim.bo/wo metatable)
-}

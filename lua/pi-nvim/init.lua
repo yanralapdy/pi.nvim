@@ -4,9 +4,8 @@ local M = {}
 M._config = nil
 
 local function ask()
-  local rpc = require("pi-nvim.rpc")
   local float = require("pi-nvim.float")
-  local config = M._config or require("pi-nvim.config").defaults
+  local session = require("pi-nvim.session")
 
   local context = float.get_selection()
 
@@ -15,56 +14,14 @@ local function ask()
       return
     end
     local prompt = float.build_prompt(context, text)
-
-    -- Try forwarding to existing pi session (or open pi in free terminal)
-    if config.session and config.session.auto_forward then
-      local session = require("pi-nvim.session")
-      if session.try_forward(prompt) then
-        return
-      end
-    end
-
-    -- Fallback: RPC + output window
-    local buf, win = float.open_output(config)
-
-    local function on_message_update(event)
-      local delta = event.assistantMessageEvent
-      if delta and delta.type == "text_delta" then
-        vim.schedule(function()
-          float.append_output(buf, delta.delta)
-        end)
-      end
-    end
-
-    local unsub_update = rpc.on_event("message_update", on_message_update)
-    rpc.on_event("agent_end", function()
-      vim.schedule(function()
-        unsub_update()
-      end)
-    end)
-
-    if vim.api.nvim_buf_is_valid(buf) then
-      vim.keymap.set("n", "<C-c>", function()
-        rpc.abort()
-        float.close_output(win)
-      end, { buffer = buf, nowait = true })
-    end
-
-    rpc.prompt(prompt)
-  end, {
-    context = context,
-    config = config,
-  })
+    session.try_forward(prompt)
+  end)
 end
 
 function M.setup(user_opts)
   local config = require("pi-nvim.config").merge(user_opts)
   M._config = config
-  local rpc = require("pi-nvim.rpc")
   local float = require("pi-nvim.float")
-
-  -- Give rpc access to config
-  rpc.set_config(config)
 
   -- Setup visual selection autocmds
   float.setup_visual_autocmds()
@@ -75,7 +32,7 @@ function M.setup(user_opts)
   end, { desc = "Ask Pi" })
 
   -- <leader>pf — send current file path to pi
-  vim.keymap.set({ "v", "n" }, "<leader>pf", function()
+  vim.keymap.set({ "v", "n" }, config.keymaps.file, function()
     local session = require("pi-nvim.session")
     local pane = session.find_pi_pane()
     if not pane then
@@ -91,9 +48,8 @@ function M.setup(user_opts)
     vim.notify("[pi] sent file: " .. path)
   end, { desc = "Pi: send file path" })
 
-  -- <leader>ks — ask about selected code (snacks input)
   -- <leader>ps — unified action menu (send file, ask selection, pick prompt)
-  vim.keymap.set("v", "<leader>ps", function()
+  vim.keymap.set("v", config.keymaps.select, function()
     local sel = float.get_selection()
     local prompts = require("pi-nvim.prompts").get_all()
     local session = require("pi-nvim.session")
@@ -156,8 +112,8 @@ function M.setup(user_opts)
     end)
   end, { desc = "Pi: select action" })
 
-  -- <leader>kf — pick a prompt (explain/fix/test/etc) and send with context
-  vim.keymap.set("v", "<leader>pp", function()
+  -- <leader>pp — pick a prompt (explain/fix/test/etc) and send with context
+  vim.keymap.set("v", config.keymaps.prompt, function()
     local prompts = require("pi-nvim.prompts").get_all()
     local sel = float.get_selection()
     local items = {}
@@ -183,13 +139,6 @@ function M.setup(user_opts)
   vim.api.nvim_create_user_command("PiAsk", function()
     ask()
   end, { desc = "Ask Pi a question" })
-
-  -- Cleanup on Neovim exit
-  vim.api.nvim_create_autocmd("VimLeavePre", {
-    callback = function()
-      rpc.dispose()
-    end,
-  })
 
   return { config = config }
 end

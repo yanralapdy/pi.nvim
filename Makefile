@@ -18,11 +18,6 @@ test-config:
 		-c "lua require('lazy').load({plugins = {'plenary.nvim'}})" \
 		-c "PlenaryBustedFile tests/config_spec.lua"
 
-test-rpc:
-	nvim --headless -u /Users/tnkapdy/.dotfiles/nvim/.config/nvim/init.lua \
-		-c "lua require('lazy').load({plugins = {'plenary.nvim'}})" \
-		-c "PlenaryBustedFile tests/rpc_spec.lua"
-
 test-float:
 	nvim --headless -u /Users/tnkapdy/.dotfiles/nvim/.config/nvim/init.lua \
 		-c "lua require('lazy').load({plugins = {'plenary.nvim'}})" \
