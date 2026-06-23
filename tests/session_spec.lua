@@ -222,10 +222,61 @@ describe("pi-nvim.session", function()
       return 42
     end
     vim.api.nvim_get_chan_info = function()
-      return { argv = { "/usr/local/bin/pi" } }
+      return { argv = { "/bin/zsh", "-c", "pi" } }
     end
     local chan = session.find_pi_terminal()
     assert.is.equal(42, chan)
+    vim.api.nvim_list_bufs = orig_list_bufs
+    vim.api.nvim_get_chan_info = orig_get_chan_info
+    session._buf_channel = orig_buf_channel
+    session._buf_buftype = orig_buf_buftype
+  end)
+
+  it("find_pi_terminal matches full pi path in argv", function()
+    local buf = vim.api.nvim_create_buf(false, true)
+    local orig_list_bufs = vim.api.nvim_list_bufs
+    local orig_get_chan_info = vim.api.nvim_get_chan_info
+    local orig_buf_channel = session._buf_channel
+    local orig_buf_buftype = session._buf_buftype
+    vim.api.nvim_list_bufs = function()
+      return { buf }
+    end
+    session._buf_buftype = function()
+      return "terminal"
+    end
+    session._buf_channel = function()
+      return 43
+    end
+    vim.api.nvim_get_chan_info = function()
+      return { argv = { "/usr/local/bin/pi" } }
+    end
+    local chan = session.find_pi_terminal()
+    assert.is.equal(43, chan)
+    vim.api.nvim_list_bufs = orig_list_bufs
+    vim.api.nvim_get_chan_info = orig_get_chan_info
+    session._buf_channel = orig_buf_channel
+    session._buf_buftype = orig_buf_buftype
+  end)
+
+  it("find_pi_terminal skips non-pi terminals", function()
+    local buf = vim.api.nvim_create_buf(false, true)
+    local orig_list_bufs = vim.api.nvim_list_bufs
+    local orig_get_chan_info = vim.api.nvim_get_chan_info
+    local orig_buf_channel = session._buf_channel
+    local orig_buf_buftype = session._buf_buftype
+    vim.api.nvim_list_bufs = function()
+      return { buf }
+    end
+    session._buf_buftype = function()
+      return "terminal"
+    end
+    session._buf_channel = function()
+      return 44
+    end
+    vim.api.nvim_get_chan_info = function()
+      return { argv = { "/bin/zsh", "-c", "echo hello" } }
+    end
+    assert.is_nil(session.find_pi_terminal())
     vim.api.nvim_list_bufs = orig_list_bufs
     vim.api.nvim_get_chan_info = orig_get_chan_info
     session._buf_channel = orig_buf_channel

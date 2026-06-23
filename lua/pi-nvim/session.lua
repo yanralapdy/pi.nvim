@@ -263,9 +263,15 @@ function M.find_pi_terminal()
       local chan = M._buf_channel(buf)
       if chan and chan > 0 then
         local info = vim.api.nvim_get_chan_info(chan)
-        local cmd = info and info.argv and info.argv[1]
-        if cmd and vim.fn.fnamemodify(cmd, ":t") == "pi" then
-          return chan, buf
+        local argv = info and info.argv
+        if argv then
+          -- ponytail: terminal spawns a shell (zsh/bash/sh) wrapping the command.
+          -- Check all argv elements for "pi" as a distinct word, not just argv[1].
+          for _, arg in ipairs(argv) do
+            if arg:match("%f[%w]pi%f[^%w]") or vim.fn.fnamemodify(arg, ":t") == "pi" then
+              return chan, buf
+            end
+          end
         end
       end
     end
