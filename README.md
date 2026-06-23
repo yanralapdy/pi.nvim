@@ -78,6 +78,9 @@ require("pi-nvim").setup({
   },
   keymaps = {
     ask = "<leader>pa",
+    select = "<leader>ps",
+    file = "<leader>pf",
+    prompt = "<leader>pp",
   },
 })
 ```
@@ -91,6 +94,9 @@ require("pi-nvim").setup({
 | `float_output` | see above | Output window dimensions and border style |
 | `session.auto_forward` | `true` | Forward prompts to existing pi tmux session when available |
 | `keymaps.ask` | `"<leader>pa"` | Keybinding to trigger the ask flow |
+| `keymaps.select` | `"<leader>ps"` | Keybinding for the action menu |
+| `keymaps.file` | `"<leader>pf"` | Keybinding to send file path to Pi |
+| `keymaps.prompt` | `"<leader>pp"` | Keybinding to pick a prompt |
 
 ## Usage
 
@@ -110,6 +116,15 @@ Press `<leader>pa` without a selection to ask a general question. The input wind
 ### Tmux integration (optional)
 
 If tmux is installed and a Pi session is running in a tmux pane, `<leader>pa` forwards your prompt directly to that session instead of opening a new terminal. Without tmux, Pi opens in a Neovim terminal split automatically.
+
+### Keybindings
+
+| Key | Mode | Action |
+|-----|------|--------|
+| `<leader>pa` | n, v | Ask Pi — opens input, sends prompt with context |
+| `<leader>ps` | n, v | Action menu — send file, ask selection, or pick a prompt |
+| `<leader>pf` | n, v | Send current file path to existing Pi session |
+| `<leader>pp` | n, v | Pick a prompt (explain, fix, test, etc.) and send with context |
 
 ### Commands
 
