@@ -30,18 +30,16 @@ function M.setup(user_opts)
   -- <leader>pf — send current file path to pi
   vim.keymap.set({ "v", "n" }, config.keymaps.file, function()
     local session = require("pi-nvim.session")
-    local pane = session.find_pi_pane()
-    if not pane then
-      vim.notify("[pi] no pi session found", vim.log.levels.ERROR)
-      return
-    end
     local path = vim.fn.expand("%")
     if path == "" then
       vim.notify("[pi] no file in buffer", vim.log.levels.ERROR)
       return
     end
-    session.forward_prompt(path, pane)
-    vim.notify("[pi] sent file: " .. path)
+    if session.try_forward(path) then
+      vim.notify("[pi] sent file: " .. path)
+    else
+      vim.notify("[pi] no pi session found", vim.log.levels.ERROR)
+    end
   end, { desc = "Pi: send file path" })
 
   -- <leader>ps — unified action menu (send file, ask selection, pick prompt)
