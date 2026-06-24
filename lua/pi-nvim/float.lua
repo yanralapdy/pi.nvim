@@ -95,30 +95,18 @@ function M.build_prompt(sel, text)
   )
 end
 
---- Build the initial value for the input window.
---- @param sel table|nil Selection from get_selection()
---- @return string
-function M.build_template(sel)
-  -- ponytail: empty default; pre-filling the full context block duplicates build_prompt's work.
-  return ""
-end
-
 --- Open a floating input window
 --- @param callback function(text|nil) Called with the input text, or nil on cancel
---- @param opts table|nil { context: table|nil, config: table|nil }
-function M.open_input(callback, opts)
-  opts = opts or {}
-  local context = opts.context
-  local config = opts.config or require("pi-nvim.config").defaults
+function M.open_input(callback)
+  local config = require("pi-nvim.config").defaults
 
   -- Try snacks.nvim first
   if config.snacks then
     local ok, snacks = pcall(require, "snacks")
     if ok and snacks.input then
-      local template = M.build_template(context)
       snacks.input({
         prompt = "Ask Pi: ",
-        value = template,
+        value = "",
         win = {
           width = config.float_input.width,
           height = config.float_input.height,
@@ -136,16 +124,14 @@ function M.open_input(callback, opts)
   end
 
   -- Fallback: manual floating window
-  M._open_fallback_input(callback, config, context)
+  M._open_fallback_input(callback, config)
 end
 
 --- Fallback input using a floating window with a scratch buffer
 --- @param callback function(text|nil)
 --- @param config table Plugin config
---- @param context table|nil Selection context
-function M._open_fallback_input(callback, config, context)
-  local template = M.build_template(context)
-  local lines = vim.split(template, "\n", { plain = true })
+function M._open_fallback_input(callback, config)
+  local lines = { "" }
 
   -- Create scratch buffer
   local buf = vim.api.nvim_create_buf(false, true)

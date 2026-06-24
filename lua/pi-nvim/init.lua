@@ -1,8 +1,5 @@
 local M = {}
 
--- Store merged config from setup()
-M._config = nil
-
 local function ask()
   local float = require("pi-nvim.float")
   local session = require("pi-nvim.session")
@@ -20,7 +17,6 @@ end
 
 function M.setup(user_opts)
   local config = require("pi-nvim.config").merge(user_opts)
-  M._config = config
   local float = require("pi-nvim.float")
 
   -- Setup visual selection autocmds

@@ -32,10 +32,6 @@ local function build_process_tree()
   return tree
 end
 
---- @class ProcessInfo
---- @field comm string
---- @field args string
-
 --- Recursively check if any descendant of pid matches the predicate.
 local function tree_has_match(tree, pid, matches)
   local proc = { comm = tree.comm[tostring(pid)], args = tree.cmd[tostring(pid)] }
@@ -53,7 +49,11 @@ end
 local function is_pi_tui(proc)
   -- Match pi executable (comm pi/pi-*/node/sh/bash) and pi as a distinct word in args.
   local comm = proc.comm or ""
-  local comm_ok = comm == "pi" or comm:match("^pi[-_]") or comm == "node" or comm == "sh" or comm == "bash"
+  local comm_ok = comm == "pi"
+    or comm:match("^pi[-_]")
+    or comm == "node"
+    or comm == "sh"
+    or comm == "bash"
   if not comm_ok then
     return false
   end
@@ -143,7 +143,8 @@ function M.forward_prompt(text, pane_id)
   return true
 end
 
-local terminal_apps = { nvim = true, yazi = true, lazygit = true, btop = true, htop = true, tmux = true }
+local terminal_apps =
+  { nvim = true, yazi = true, lazygit = true, btop = true, htop = true, tmux = true }
 
 local function is_terminal_app(proc)
   if terminal_apps[proc.comm] then

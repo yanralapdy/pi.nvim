@@ -9,21 +9,25 @@ format:
 check: lint format test
 
 test:
-	nvim --headless -u /Users/tnkapdy/.dotfiles/nvim/.config/nvim/init.lua \
-		-c "lua require('lazy').load({plugins = {'plenary.nvim'}})" \
+	nvim --headless -u /dev/null \
+		--cmd "set rtp+=/tmp/plenary.nvim" \
+		--cmd "set rtp+=." \
 		-c "PlenaryBustedDirectory tests/ {minimal_init = 'tests/minimal_init.lua'}"
 
 test-config:
-	nvim --headless -u /Users/tnkapdy/.dotfiles/nvim/.config/nvim/init.lua \
-		-c "lua require('lazy').load({plugins = {'plenary.nvim'}})" \
+	nvim --headless -u /dev/null \
+		--cmd "set rtp+=/tmp/plenary.nvim" \
+		--cmd "set rtp+=." \
 		-c "PlenaryBustedFile tests/config_spec.lua"
 
 test-float:
-	nvim --headless -u /Users/tnkapdy/.dotfiles/nvim/.config/nvim/init.lua \
-		-c "lua require('lazy').load({plugins = {'plenary.nvim'}})" \
+	nvim --headless -u /dev/null \
+		--cmd "set rtp+=/tmp/plenary.nvim" \
+		--cmd "set rtp+=." \
 		-c "PlenaryBustedFile tests/float_spec.lua"
 
 test-session:
-	nvim --headless -u /Users/tnkapdy/.dotfiles/nvim/.config/nvim/init.lua \
-		-c "lua require('lazy').load({plugins = {'plenary.nvim'}})" \
+	nvim --headless -u /dev/null \
+		--cmd "set rtp+=/tmp/plenary.nvim" \
+		--cmd "set rtp+=." \
 		-c "PlenaryBustedFile tests/session_spec.lua"

@@ -57,5 +57,5 @@ jobs:
             -c "set rtp+=/tmp/plenary.nvim" \
             -c "set rtp+=." \
             -c "PlenaryBustedFile tests/config_spec.lua" \
-            -c "PlenaryBustedFile tests/rpc_spec.lua" \
-            -c "PlenaryBustedFile tests/float_spec.lua"
+            -c "PlenaryBustedFile tests/float_spec.lua" \
+            -c "PlenaryBustedFile tests/session_spec.lua"

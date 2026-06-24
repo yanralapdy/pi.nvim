@@ -26,15 +26,4 @@ describe("pi-nvim.float", function()
     assert.is_truthy(prompt:match("what does this do?"))
   end)
 
-  it("builds input template without crashing", function()
-    local sel = {
-      path = "test.lua",
-      start_row = 10,
-      end_row = 20,
-      filetype = "lua",
-      code = "print('hello')",
-    }
-    local template = float.build_template(sel)
-    assert.is_string(template)
-  end)
 end)
