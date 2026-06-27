@@ -283,7 +283,19 @@ describe("pi-nvim.session", function()
     session._buf_buftype = orig_buf_buftype
   end)
 
-  it("forward_to_terminal sends text with newline", function()
+  it("forward_to_terminal sends text with carriage return when submit", function()
+    local sent = nil
+    local orig_chan_send = vim.api.nvim_chan_send
+    vim.api.nvim_chan_send = function(chan, text)
+      sent = { chan = chan, text = text }
+    end
+    assert.is_true(session.forward_to_terminal("hello", 42, true))
+    assert.is.equal(42, sent.chan)
+    assert.is.equal("hello\r", sent.text)
+    vim.api.nvim_chan_send = orig_chan_send
+  end)
+
+  it("forward_to_terminal appends no newline without submit", function()
     local sent = nil
     local orig_chan_send = vim.api.nvim_chan_send
     vim.api.nvim_chan_send = function(chan, text)
@@ -291,7 +303,7 @@ describe("pi-nvim.session", function()
     end
     assert.is_true(session.forward_to_terminal("hello", 42))
     assert.is.equal(42, sent.chan)
-    assert.is.equal("hello\n", sent.text)
+    assert.is.equal("hello", sent.text)
     vim.api.nvim_chan_send = orig_chan_send
   end)
 

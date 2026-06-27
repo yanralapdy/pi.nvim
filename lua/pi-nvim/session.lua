@@ -178,8 +178,9 @@ end
 
 --- Open pi in a tmux pane and send the prompt.
 -- Finds a free terminal or creates a new pane.
+-- @param submit boolean|nil Press Enter after sending (default false)
 -- @return boolean success
-function M.open_pi_with_prompt(text)
+function M.open_pi_with_prompt(text, submit)
   if not M.is_tmux_available() then
     return false
   end
@@ -192,7 +193,7 @@ function M.open_pi_with_prompt(text)
     raw_send("-l", "pi")
     raw_send("Enter")
     vim.defer_fn(function()
-      M.forward_prompt(text, pane_id)
+      M.forward_prompt(text, pane_id, submit)
     end, 1500)
     return true
   end
@@ -205,15 +206,16 @@ function M.open_pi_with_prompt(text)
   end
   local new_pane = vim.fn.trim(vim.fn.system({ "tmux", "display-message", "-p", "#{pane_id}" }))
   vim.defer_fn(function()
-    M.forward_prompt(text, new_pane)
+    M.forward_prompt(text, new_pane, submit)
   end, 1500)
   return true
 end
 
 --- Open pi in a nvim terminal (vertical split, :Vex style).
 -- Sends the prompt after pi starts.
+-- @param submit boolean|nil Press Enter after sending (default false)
 -- @return boolean success
-function M.open_pi_in_nvim_terminal(text)
+function M.open_pi_in_nvim_terminal(text, submit)
   -- Save current window
   local prev_win = vim.api.nvim_get_current_win()
 
@@ -243,7 +245,7 @@ function M.open_pi_in_nvim_terminal(text)
 
   -- Wait for pi to start, then send the prompt
   vim.defer_fn(function()
-    pcall(vim.api.nvim_chan_send, chan, text .. "\n")
+    pcall(vim.api.nvim_chan_send, chan, text .. (submit and "\r" or ""))
   end, 1000)
 
   -- Return to previous window
@@ -288,12 +290,13 @@ function M.find_pi_terminal()
 end
 
 --- Send text to an existing nvim terminal pi session.
+-- @param submit boolean|nil Press Enter after sending (default false)
 -- @return boolean success
-function M.forward_to_terminal(text, chan)
+function M.forward_to_terminal(text, chan, submit)
   if not chan or chan <= 0 then
     return false
   end
-  pcall(vim.api.nvim_chan_send, chan, text .. "\n")
+  pcall(vim.api.nvim_chan_send, chan, text .. (submit and "\r" or ""))
   return true
 end
 
@@ -310,13 +313,13 @@ function M.try_forward(text, submit)
     if pane_id then
       return M.forward_prompt(text, pane_id, submit)
     end
-    return M.open_pi_with_prompt(text)
+    return M.open_pi_with_prompt(text, submit)
   end
   local chan = M.find_pi_terminal()
   if chan then
-    return M.forward_to_terminal(text, chan)
+    return M.forward_to_terminal(text, chan, submit)
   end
-  return M.open_pi_in_nvim_terminal(text)
+  return M.open_pi_in_nvim_terminal(text, submit)
 end
 
 return M
