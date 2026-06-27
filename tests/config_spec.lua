@@ -8,6 +8,12 @@ describe("pi-nvim.config", function()
     assert.is.equal("<leader>ps", config.defaults.keymaps.select)
     assert.is.equal("<leader>pf", config.defaults.keymaps.file)
     assert.is.equal("<leader>pp", config.defaults.keymaps.prompt)
+    assert.is.equal(true, config.defaults.autosubmit)
+  end)
+
+  it("allows overriding autosubmit", function()
+    local merged = config.merge({ autosubmit = false })
+    assert.is.equal(false, merged.autosubmit)
   end)
 
   it("merges user opts with defaults", function()

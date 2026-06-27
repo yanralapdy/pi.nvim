@@ -3,6 +3,7 @@ local M = {}
 M.defaults = {
   pi_cmd = "pi",
   snacks = true,
+  autosubmit = true,
   float_input = {
     width = 80,
     height = 20,

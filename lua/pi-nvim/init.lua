@@ -89,7 +89,7 @@ function M.setup(user_opts)
         text = "Prompt: " .. prompt.name,
         action = function()
           local text = prompt.prompt:gsub("@this", float.build_prompt(sel, ""))
-          session.try_forward(text, true)
+          session.try_forward(text, config.autosubmit)
         end,
       })
     end
@@ -125,7 +125,7 @@ function M.setup(user_opts)
         return
       end
       local text = prompts[item.name].prompt:gsub("@this", float.build_prompt(sel, ""))
-      require("pi-nvim.session").try_forward(text, true)
+      require("pi-nvim.session").try_forward(text, config.autosubmit)
     end)
   end, { desc = "Pi: pick prompt" })
 
