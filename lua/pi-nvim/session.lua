@@ -120,8 +120,11 @@ end
 
 --- Send text to a tmux pane using bracketed paste mode.
 -- Handles multi-line text correctly (from kiro.nvim pattern).
+-- @param text string Text to send
+-- @param pane_id string Target pane
+-- @param submit boolean|nil Press Enter after sending (default false)
 -- @return boolean success
-function M.forward_prompt(text, pane_id)
+function M.forward_prompt(text, pane_id, submit)
   if not text or text == "" or not pane_id then
     return false
   end
@@ -140,6 +143,10 @@ function M.forward_prompt(text, pane_id)
   end
   -- End bracketed paste
   send("\x1b[201~")
+  -- Auto-submit if requested
+  if submit then
+    send("Enter")
+  end
   return true
 end
 
@@ -291,15 +298,17 @@ function M.forward_to_terminal(text, chan)
 end
 
 --- Try to forward text to an existing pi pane, or open pi in a terminal.
+-- @param text string Text to send
+-- @param submit boolean|nil Press Enter after sending (default false)
 -- @return boolean forwarded
-function M.try_forward(text)
+function M.try_forward(text, submit)
   if not text or text == "" then
     return false
   end
   if M.is_tmux_available() then
     local pane_id = M.find_pi_pane()
     if pane_id then
-      return M.forward_prompt(text, pane_id)
+      return M.forward_prompt(text, pane_id, submit)
     end
     return M.open_pi_with_prompt(text)
   end
