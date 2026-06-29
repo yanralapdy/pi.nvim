@@ -1,6 +1,8 @@
-# pi.nvim
+# pi.nvim — Neovim Plugin for AI Coding Assistant
 
-Neovim plugin for the [Pi coding agent](https://github.com/earendil-works/pi-coding-agent). Ask questions about your code from inside Neovim. Pi runs in a tmux pane or a Neovim terminal split.
+A **Neovim plugin** that integrates the [Pi AI coding agent](https://github.com/earendil-works/pi-coding-agent) directly into your editor. Ask questions about your code from inside Neovim — Pi runs in a tmux pane or a Neovim terminal split.
+
+> **Keywords:** neovim plugin, lua, coding agent, ai assistant, developer tools, productivity, tmux integration, code analysis
 
 ## Features
 
